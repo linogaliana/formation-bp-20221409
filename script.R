@@ -53,8 +53,8 @@ stats_agregees(rnorm(10), "variance")
 
 # j'importe les données avec read_csv2 parce que c'est un csv avec des ;
 # et que read_csv attend comme separateur des ,
-df2 <- readr::read_csv2(
-  "individu_reg.csv",
+df2 <- arrow::read_parquet(
+  "individu_reg.parquet",
   col_select = c("region", "aemm", "aged", "anai", "catl", "cs1",
                 "cs2", "cs3", "couple", "na38", "naf08", "pnai12",
                 "sexe", "surf", "tp", "trans", "ur")
@@ -132,6 +132,23 @@ ggplot(df2[as.numeric(df2$aged) > 50,],
        alpha = 0.2) + geom_histogram()
 
 
+stats_age <- df2 |> 
+  group_by(decennie = decennie_a_partir_annee(age)) |>
+  summarise(n())
+
+table_age <- gt(stats_age) |>
+  tab_header(
+    title = "Distribution des âges dans notre population"
+  ) |>
+  fmt_number(
+    columns = `n()`,
+    sep_mark = " ",
+    decimals = 0
+  ) |>
+  cols_label(
+    decennie = "Tranche d'âge",
+    `n()` = "Population"
+  )
 
 # part d'homme dans chaque cohorte ===================
 
