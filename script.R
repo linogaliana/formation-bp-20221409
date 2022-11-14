@@ -135,6 +135,14 @@ ggplot(df2[as.numeric(df2$aged) > 50,],
 
 # part d'homme dans chaque cohorte ===================
 
+part_total <- function(df2, var_groupe = "age", var_interet = "sexe"){
+  df2 |>
+    group_by(!!!syms(c(var_groupe, var_interet))) |>
+    summarise(share = n()) |>
+    group_by(!!sym(var_groupe)) |>
+    mutate(share = share / sum(share))
+}
+
 temp <- df2 %>%
   group_by(age, sexe) %>%
   summarise(SH_sexe = n()) %>%
