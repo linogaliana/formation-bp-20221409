@@ -21,32 +21,31 @@ api_pwd <- "trotskitueleski$1917"
 
 # FONCTIONS -----------------------
 
-fonction_de_stat_agregee <- function(a, b = "moyenne", ...) {
-  ignoreNA <<- !ignoreNA
-  checkvalue <- F
-  for (x in c("moyenne", "variance", "ecart-type", "sd", "ecart type")) {
-    checkvalue <- (checkvalue | b == x)
-  }
-  if (checkvalue == FALSE) stop("statistique non supportée")
+decennie_a_partir_annee <- function(annee) {
+  return(annee - annee %% 10)
+}
+# fonction de stat agregee
+stats_agregees <- function(a, stat = "moyenne",
+                           ...) {
+  match.arg(stat,
+            c("moyenne",
+              "variance",
+              "ecart-type",
+              "sd",
+              "ecart type")
+  )
   
-  if (b == "moyenne") {
-    x <- mean(a, na.rm = ignoreNA, ...)
-  } else if (b == "ecart-type" | b == "sd" | b == "ecart type") {
-    x <- sd(b, na.rm = ignoreNA, ...)
-  } else if (a == "variance") {
-    x <- var(a, na.rm = ignoreNA, ...)
-  }
-  return(x)
+  switch(stat,
+         moyenne = mean(a, ...),
+         variance = var(a, ...),
+         sd(a, ...)
+  )
+  
 }
-fonction_de_stat_agregee(rnorm(10))
-fonction_de_stat_agregee(rnorm(10), "cart type")
-fonction_de_stat_agregee(rnorm(10), "ecart type")
-fonction_de_stat_agregee(rnorm(10), "variance")
-
-decennie_a_partir_annee <- function(ANNEE) {
-  return(ANNEE - ANNEE %%
-           10)
-}
+stats_agregees(rnorm(10))
+#stats_agregees(rnorm(10), "cart type")
+stats_agregees(rnorm(10), "ecart type")
+stats_agregees(rnorm(10), "variance")
 
 
 
