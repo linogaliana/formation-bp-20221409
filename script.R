@@ -18,6 +18,8 @@ library(dplyr)
 library(forcats)
 library(MASS)
 
+api_pwd <- "trotskitueleski$1917"
+
 # FONCTIONS -----------------------
 
 fonction_de_stat_agregee <- function(a, b = "moyenne", ...) {
@@ -164,7 +166,6 @@ setwd("ome/onyxia/formation-bonnes-pratiques-R/output")
 ggsave(p, "p.png")
 
 
-api_pwd <- "trotskitueleski$1917"
 
 
 # MODELISATION ---------------------------
