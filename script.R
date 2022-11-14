@@ -1,3 +1,8 @@
+# Traitement des données du recensement de 
+# la population
+
+# ENVIRONNEMENT -------------------------
+
 rm(list = ls())
 setwd("/home/onyxia/formation-bonnes-pratiques-R")
 
@@ -13,9 +18,38 @@ library(dplyr)
 library(forcats)
 library(MASS)
 
-# IMPORT DONNEES --------------------
+# FONCTIONS -----------------------
 
-## LECTURE CSV ===================
+fonction_de_stat_agregee <- function(a, b = "moyenne", ...) {
+  ignoreNA <<- !ignoreNA
+  checkvalue <- F
+  for (x in c("moyenne", "variance", "ecart-type", "sd", "ecart type")) {
+    checkvalue <- (checkvalue | b == x)
+  }
+  if (checkvalue == FALSE) stop("statistique non supportée")
+  
+  if (b == "moyenne") {
+    x <- mean(a, na.rm = ignoreNA, ...)
+  } else if (b == "ecart-type" | b == "sd" | b == "ecart type") {
+    x <- sd(b, na.rm = ignoreNA, ...)
+  } else if (a == "variance") {
+    x <- var(a, na.rm = ignoreNA, ...)
+  }
+  return(x)
+}
+fonction_de_stat_agregee(rnorm(10))
+fonction_de_stat_agregee(rnorm(10), "cart type")
+fonction_de_stat_agregee(rnorm(10), "ecart type")
+fonction_de_stat_agregee(rnorm(10), "variance")
+
+decennie_a_partir_annee <- function(ANNEE) {
+  return(ANNEE - ANNEE %%
+           10)
+}
+
+
+
+# IMPORT DONNEES --------------------
 
 # j'importe les données avec read_csv2 parce que c'est un csv avec des ;
 # et que read_csv attend comme separateur des ,
@@ -36,7 +70,51 @@ df2 <- df |>
            "naf08", "pnai12", "sexe", "surf", "tp", "trans", "ur"))
 print(df2, 20)
 
-# STATISTIQUES DESCRIPTIVES --------------------
+# RETRAITEMENT DONNEES -----------------------
+
+## TRAITEMENT VALEURS MANQUANTES =====================
+
+# recode valeurs manquantes
+# valeursManquantes <- data.frame(colonne = c(""), NBRE = c(NA))
+# for (i in 1:length(colnames(df2))){
+#  x = df2[,i]
+#  j=0
+#  t <-0
+#  for (j in 1:nrow(x)){
+#    if (is.na(pull(x[j,])) == T) t <- t+1
+#  }
+#  data.frame(
+#
+#  )
+# }
+df2[df2$na38 == "ZZ", "na38"] <- NA
+df2[df2$na38 == "Z", "trans"] <- NA
+df2[df2$tp == "Z", "tp"] <- NA
+df2[endsWith(df2$naf08, "Z"), "naf08"] <- NA
+
+
+## VARIABLES CATEGORIELLES ================
+
+str(df2)
+df2[, nrow(df2) - 1] <- factor(df2[, nrow(df2) - 1])
+df2$ur <- factor(df2$ur)
+df2$sexe <-
+  fct_recode(df2$sexe, "Homme" = "0", "Femme" = "1")
+
+# STATISTIQUES DESCRIPTIVES ------------------
+
+## STATISTIQUES AGREGEES ===================
+
+ignoreNA <- T
+
+
+fonction_de_stat_agregee(df %>% filter(sexe == "Homme") %>% mutate(aged = as.numeric(aged)) %>% pull(aged), na.rm = TRUE)
+fonction_de_stat_agregee(df2 %>% filter(sexe == "Femme") %>% mutate(aged = as.numeric(aged)) %>% pull(aged), na.rm = TRUE)
+fonction_de_stat_agregee(df2 %>% filter(sexe == "Homme" & couple == "2") %>% mutate(aged = as.numeric(aged)) %>% pull(aged), na.rm = TRUE)
+fonction_de_stat_agregee(df2 %>% filter(sexe == "Femme" & couple == "2") %>% mutate(aged = as.numeric(aged)) %>% pull(aged), na.rm = TRUE)
+
+
+## STATISTIQUES PROFESSIONS ====================
 
 # combien de professions
 print("Nombre de professions :")
@@ -48,11 +126,6 @@ print(summarise(df2, length(unique(unlist(cs3[!is.na(cs3)])))))
 
 print.data.frame <- summarise(group_by(df2, aged), n())
 print(print.data.frame)
-
-decennie_a_partir_annee <- function(ANNEE) {
-  return(ANNEE - ANNEE %%
-    10)
-}
 
 # GRAPHIQUES --------------------
 
@@ -66,8 +139,6 @@ ggplot(df2[as.numeric(df2$aged) > 50, c(3, 4)], aes(
   y = ..density.., fill = factor(decennie_a_partir_annee(as.numeric(aemm)))
 ), alpha = 0.2) +
   geom_histogram() # position = "dodge") + scale_fill_viridis_d()
-
-# STATISTIQUES DESCRIPTIVES -----------------
 
 # part d'homme dans chaque cohort
 ggplot(df %>% group_by(as.numeric(aged, sexe)) %>% summarise(SH_sexe = n()) %>% group_by(aged) %>% summarise(SH_sexe = SH_sexe / sum(SH_sexe))) %>% filter(sexe == 1) + geom_bar(aes(x = as.numeric(aged), y = SH_sexe), stat = "identity") + geom_point(aes(x = as.numeric(aged), y = SH_sexe), stat = "identity", color = "red") + coord_cartesian(c(0, 100))
@@ -92,66 +163,6 @@ setwd("ome/onyxia/formation-bonnes-pratiques-R/output")
 
 ggsave(p, "p.png")
 
-# TRAITEMENT VALEURS MANQUANTES -----------------------
-
-# recode valeurs manquantes
-# valeursManquantes <- data.frame(colonne = c(""), NBRE = c(NA))
-# for (i in 1:length(colnames(df2))){
-#  x = df2[,i]
-#  j=0
-#  t <-0
-#  for (j in 1:nrow(x)){
-#    if (is.na(pull(x[j,])) == T) t <- t+1
-#  }
-#  data.frame(
-#
-#  )
-# }
-df2[df2$na38 == "ZZ", "na38"] <- NA
-df2[df2$na38 == "Z", "trans"] <- NA
-df2[df2$tp == "Z", "tp"] <- NA
-df2[endsWith(df2$naf08, "Z"), "naf08"] <- NA
-
-
-# VARIABLES CATEGORIELLES -------------------
-
-str(df2)
-df2[, nrow(df2) - 1] <- factor(df2[, nrow(df2) - 1])
-df2$ur <- factor(df2$ur)
-df2$sexe <-
-  fct_recode(df2$sexe, "Homme" = "0", "Femme" = "1")
-
-# STATISTIQUES AGREGEES ------------------
-
-# fonction de stat agregee
-ignoreNA <- T
-fonction_de_stat_agregee <- function(a, b = "moyenne", ...) {
-  ignoreNA <<- !ignoreNA
-  checkvalue <- F
-  for (x in c("moyenne", "variance", "ecart-type", "sd", "ecart type")) {
-    checkvalue <- (checkvalue | b == x)
-  }
-  if (checkvalue == FALSE) stop("statistique non supportée")
-
-  if (b == "moyenne") {
-    x <- mean(a, na.rm = ignoreNA, ...)
-  } else if (b == "ecart-type" | b == "sd" | b == "ecart type") {
-    x <- sd(b, na.rm = ignoreNA, ...)
-  } else if (a == "variance") {
-    x <- var(a, na.rm = ignoreNA, ...)
-  }
-  return(x)
-}
-fonction_de_stat_agregee(rnorm(10))
-fonction_de_stat_agregee(rnorm(10), "cart type")
-fonction_de_stat_agregee(rnorm(10), "ecart type")
-fonction_de_stat_agregee(rnorm(10), "variance")
-
-
-fonction_de_stat_agregee(df %>% filter(sexe == "Homme") %>% mutate(aged = as.numeric(aged)) %>% pull(aged), na.rm = TRUE)
-fonction_de_stat_agregee(df2 %>% filter(sexe == "Femme") %>% mutate(aged = as.numeric(aged)) %>% pull(aged), na.rm = TRUE)
-fonction_de_stat_agregee(df2 %>% filter(sexe == "Homme" & couple == "2") %>% mutate(aged = as.numeric(aged)) %>% pull(aged), na.rm = TRUE)
-fonction_de_stat_agregee(df2 %>% filter(sexe == "Femme" & couple == "2") %>% mutate(aged = as.numeric(aged)) %>% pull(aged), na.rm = TRUE)
 
 api_pwd <- "trotskitueleski$1917"
 
