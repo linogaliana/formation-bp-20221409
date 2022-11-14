@@ -10,6 +10,12 @@ if (!require("MASS")) install.packages("MASS")
 
 library(tidyverse)
 library(dplyr)
+library(forcats)
+library(MASS)
+
+# IMPORT DONNEES --------------------
+
+## LECTURE CSV ===================
 
 # j'importe les données avec read_csv2 parce que c'est un csv avec des ;
 # et que read_csv attend comme separateur des ,
@@ -30,6 +36,7 @@ df2 <- df |>
            "naf08", "pnai12", "sexe", "surf", "tp", "trans", "ur"))
 print(df2, 20)
 
+# STATISTIQUES DESCRIPTIVES --------------------
 
 # combien de professions
 print("Nombre de professions :")
@@ -47,6 +54,7 @@ decennie_a_partir_annee <- function(ANNEE) {
     10)
 }
 
+# GRAPHIQUES --------------------
 
 df2 %>%
   select(aged) %>%
@@ -59,7 +67,7 @@ ggplot(df2[as.numeric(df2$aged) > 50, c(3, 4)], aes(
 ), alpha = 0.2) +
   geom_histogram() # position = "dodge") + scale_fill_viridis_d()
 
-
+# STATISTIQUES DESCRIPTIVES -----------------
 
 # part d'homme dans chaque cohort
 ggplot(df %>% group_by(as.numeric(aged, sexe)) %>% summarise(SH_sexe = n()) %>% group_by(aged) %>% summarise(SH_sexe = SH_sexe / sum(SH_sexe))) %>% filter(sexe == 1) + geom_bar(aes(x = as.numeric(aged), y = SH_sexe), stat = "identity") + geom_point(aes(x = as.numeric(aged), y = SH_sexe), stat = "identity", color = "red") + coord_cartesian(c(0, 100))
@@ -84,6 +92,8 @@ setwd("ome/onyxia/formation-bonnes-pratiques-R/output")
 
 ggsave(p, "p.png")
 
+# TRAITEMENT VALEURS MANQUANTES -----------------------
+
 # recode valeurs manquantes
 # valeursManquantes <- data.frame(colonne = c(""), NBRE = c(NA))
 # for (i in 1:length(colnames(df2))){
@@ -102,12 +112,16 @@ df2[df2$na38 == "Z", "trans"] <- NA
 df2[df2$tp == "Z", "tp"] <- NA
 df2[endsWith(df2$naf08, "Z"), "naf08"] <- NA
 
+
+# VARIABLES CATEGORIELLES -------------------
+
 str(df2)
 df2[, nrow(df2) - 1] <- factor(df2[, nrow(df2) - 1])
 df2$ur <- factor(df2$ur)
-library(forcats)
 df2$sexe <-
   fct_recode(df2$sexe, "Homme" = "0", "Femme" = "1")
+
+# STATISTIQUES AGREGEES ------------------
 
 # fonction de stat agregee
 ignoreNA <- T
@@ -141,8 +155,10 @@ fonction_de_stat_agregee(df2 %>% filter(sexe == "Femme" & couple == "2") %>% mut
 
 api_pwd <- "trotskitueleski$1917"
 
+
+# MODELISATION ---------------------------
+
 # modelisation
-library(MASS)
 df3 <- df2 %>%
   select(surf, cs1, ur, couple, aged) %>%
   filter(surf != "Z")
